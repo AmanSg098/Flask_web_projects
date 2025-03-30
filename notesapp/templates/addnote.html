@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock title %}
+
+{% block content %}
+    <div class="container">
+        <h2>Notes App</h2>
+        <form action="/add" method="post">  <!-- Ensure the correct route -->
+            <fieldset>
+                {{ form.hidden_tag() }}
+                {{ form.title(placeholder= form.title.label.text ) }}
+                {{ form.content(placeholder= form.content.label.text ) }}
+            </fieldset>
+            {{ form.submit(class='btn') }}
+        </form>
+    </div>
+    <div class="notes-container"> 
+        {% for note in notes %}
+            <div class="note-card">
+                <h3>{{ note.title }}</h3>
+                <p>{{ note.content }}</p>
+                <div class="note-actions">
+                    <form action="/edit/note/{{ note.id }}" method="get">
+                        <button type="submit" class="btn-edit">
+                            <i class="fas fa-pencil-alt"></i> Edit
+                        </button>
+                    </form>
+                    <form action="/delete/note/{{ note.id }}" method="post">
+                        <button type="submit" class="btn-delete">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    </div>  
+
+{% endblock content %}

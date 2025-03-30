@@ -1,0 +1,41 @@
+notes = []
+
+@app.route('/', methods=['GET'])
+@app.route('/home', methods=['GET'])
+def home():
+    form = NoteForm()
+    return render_template('addnote.html', notes=notes, form=form)
+
+
+@app.route('/add', methods=['POST'])
+def add_note():
+    form = NoteForm()
+    if form.validate_on_submit():
+        notes.append({"title": form.title.data,
+                      "content": form.content.data})
+    return redirect(url_for('home'))
+
+
+@app.route('/delete/<int:note_id>', methods=['POST'])
+def delete_note(note_id):
+    if 0 <= note_id < len(notes):
+        del notes[note_id]
+    return redirect(url_for('home'))
+
+
+@app.route('/edit/<int:note_id>', methods=['GET','POST'])
+def edit_note(note_id):
+    if note_id < 0 or note_id >= len(notes):
+        return "Note not found", 404
+    
+    form = NoteForm()
+    if form.validate_on_submit():
+        notes[note_id] = {"title": form.title.data,
+                          "content": form.content.data}
+        return redirect(url_for('home'))
+    
+    # pre-fill form fields only for GET requests
+    form.title.data = notes[note_id]['title']
+    form.content.data = notes[note_id]['content']
+    return render_template('editnote.html', note=notes[note_id],
+                           note_id=note_id, form=form)

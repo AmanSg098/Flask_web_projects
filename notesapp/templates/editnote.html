@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock title %}
+
+{% block content %}
+    <div class="container">
+        <form action="{{ url_for('edit_note', note_id=note_id) }}" method="post">  <!-- Ensure the correct route -->
+            <fieldset>
+                {{ form.hidden_tag() }}
+                {{ form.title(placeholder= form.title.label.text ) }}
+                {{ form.content(placeholder= form.content.label.text ) }}
+            </fieldset>
+            {{ form.submit(class='btn', value='Edit') }}
+        </form>
+    </div>
+{% endblock content %}

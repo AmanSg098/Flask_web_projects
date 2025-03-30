@@ -1,0 +1,446 @@
+/* Ensure body layout supports fixed form */
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #018bfc, #018bfc);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+/* Fix form on the left */
+.container {
+    background: #fff;
+    padding: 20px;
+    width: 400px;  /* Adjust width */
+    border-radius: 15px;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    position: fixed;  /* Keep it fixed */
+    top: 100px;  /* Space below navbar */
+    left: 180px; /* Align to the left */
+    z-index: 100;
+}
+
+/* Form Styling */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    z-index: 1;
+}
+
+/* Ensure text inputs fit within the form */
+input, textarea {
+    width: 90%;
+    max-width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    background: #f8f8f8;
+    transition: 0.3s ease-in-out;
+    outline: none;
+}
+
+input:focus, textarea:focus {
+    background: #fff;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+}
+input, text{
+    margin-bottom: 10px;
+    resize: none;
+}
+
+/* Fixing textarea height */
+textarea {
+    height: 100px;
+    margin-top: 10px;
+    resize: none;
+}
+
+/* Buttons */
+.btn {
+    background: #018bfc;
+    color: white;   
+    font-size: 16px;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+    width: 100px;
+}
+
+.btn:hover {
+    background: #005eac;
+}
+
+.notes-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 100px; /* Space for navbar */
+    padding-left: 500px; /* Prevent overlap with fixed form */
+    width: 100%;
+    max-width: 1000px;
+}
+
+/* Note Cards */
+.note-card {
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 300px;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+}
+
+.note-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.note-card h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.note-card p {
+    font-size: 14px;
+    color: #555;
+    margin: 10px 0;
+}
+
+/* Note Actions */
+.note-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.note-actions button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border: none;
+    padding: 8px 10px;
+    font-size: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+/* Edit Button */
+.btn-edit {
+    background: #fbbc05;
+    color: white;
+}
+
+.btn-edit:hover {
+    background: #e6a000;
+}
+
+/* Delete Button */
+.btn-delete {
+    background: #ea4335;
+    color: white;
+}
+
+.btn-delete:hover {
+    background: #c82333;
+}
+
+/* Icons */
+.note-actions i {
+    font-size: 14px;
+}
+
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        width: 250px; /* Slightly smaller for mobile */
+        left: 10px;
+    }
+
+    .notes-container {
+        padding-left: 280px; /* Adjusted for smaller screens */
+    }
+}
+
+@media (max-width: 600px) {
+    .container {
+        position: relative;
+        width: 100%;
+        max-width: 100%;
+        margin: auto;
+        left: 0;
+    }
+
+    .notes-container {
+        padding-left: 0;
+        margin-top: 20px;
+    }
+}
+
+/* Navbar - Fixed at the top */
+.navbar {
+    background: #005eac;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 90%;
+    max-width: 1200px;
+    position: relative; /* Needed for absolute positioning of dropdown */
+}
+
+/* Logo */
+.logo {
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+}
+
+/* Nav Links - Default (Visible for Desktop) */
+.nav-links {
+    list-style: none;
+    display: flex; /* Always visible for desktop */
+    gap: 20px;
+}
+
+.nav-links li {
+    display: inline;
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    transition: 0.3s;
+}
+
+.nav-links a:hover {
+    color: #fbbc05;
+}
+
+/* Hamburger Menu - Mobile View */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+}
+
+/* Dropdown Card Styling (For Mobile) */
+@media (max-width: 768px) {
+    .menu-toggle {
+        display: block;
+    }
+
+    .nav-links {
+        display: none; /* Hidden by default on mobile */
+        flex-direction: column;
+        position: absolute;
+        top: 60px;
+        right: 0;
+        background: white;
+        width: 200px;
+        text-align: left;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    /* Show dropdown when active */
+    .nav-links.active {
+        display: flex;
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .nav-links li {
+        padding: 10px 0;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .nav-links li:last-child {
+        border-bottom: none;
+    }
+
+    .nav-links a {
+        color: #005eac;
+        font-size: 16px;
+        font-weight: bold;
+        text-decoration: none;
+        display: block;
+        padding: 5px;
+    }
+
+    .nav-links a:hover {
+        color: #003d82;
+    }
+}
+
+
+/* Style for the fieldset */
+fieldset {
+    border: 2px solid #83bef9; /* Thicker border with a nice color */
+    border-radius: 10px; /* Rounded corners */
+    padding: 15px; /* Add some padding inside */
+    margin: 8px 0; /* Add spacing around */
+    background: #83bef9; /* Light background */
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+}
+
+/* Style for the legend */
+legend {
+    font-size: 18px;
+    font-weight: bold;
+    color: #018bfc;
+    padding: 5px 10px;
+    background: #e3f2fd; /* Light blue background */
+    border-radius: 5px;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.register_login_container {
+    background: #fff;
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 15px;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    
+    /* Centering */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.alert {
+    position: fixed;
+    top: 30px; /* Adjust based on navbar height */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1050;
+    max-width: 600px;
+    width: 90%;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    border-left: 5px solid;
+    text-align: center;
+    transition: all 0.3s ease-in-out;
+    animation: fadeOut 8s forwards;
+}
+
+/* Success (Green) */
+.alert-success {
+    background-color: #f0fff4;
+    color: #155724;
+    border-color: #28a745;
+}
+
+/* Error (Red) */
+.alert-danger {
+    background-color: #fff5f5;
+    color: #721c24;
+    border-color: #dc3545;
+}
+
+/* Warning (Yellow) */
+.alert-warning {
+    background-color: #fffaf3;
+    color: #856404;
+    border-color: #ffc107;
+}
+
+/* Info (Blue) */
+.alert-info {
+    background-color: #f0f8ff;
+    color: #0c5460;
+    border-color: #17a2b8;
+}
+
+/* Auto-dismiss animation */
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+.alert.fade-out {
+    animation: fadeOut 1s ease-out forwards;
+}
+
+/* General form styling */
+.form-group {
+    margin-bottom: 1.5rem; /* Space between fields */
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 2px solid #ced4da;
+    border-radius: 8px;
+    transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+/* Focus effect */
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+/* Large input field */
+.form-control-lg {
+    font-size: 18px;
+    padding: 14px;
+}
+
+/* Invalid field styling */
+.is-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 5px rgba(220, 53, 69, 0.5) !important;
+}
+
+/* Error message styling */
+.invalid-feedback {
+    font-size: 14px;
+    color: #dc3545;
+    margin-top: 5px;
+    padding-left: 5px;
+    font-weight: 500;
+}
