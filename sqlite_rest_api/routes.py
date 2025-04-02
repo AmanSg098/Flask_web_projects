@@ -2,14 +2,34 @@ from flask import request, jsonify
 from sqlite_rest_api import db
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from models import User
+from functools import wraps
 from flask import Blueprint
 import logging
 
+# setting blueprint for the routes of api
 api = Blueprint('api', __name__)
 
+# configuring loggin mechanism
 logging.basicConfig(filename='api.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
+def basic_auth_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not auth.username or not auth.password:
+            return jsonify({'message': 'Authentication required'}), 401
+        
+        user = User.query.filter_by(username=auth.username).first()
+        if not user or not user.check_password(auth.password):
+            return jsonify({'message': 'Invalid credentials'}), 401
+
+        return f(*args, **kwargs)  # Proceed with the actual function
+
+    return decorated_function
+
+
+# before each request, log request and data/payload if provided
 @api.before_request
 def log_requests_info():
     if request.method in ['POST','PUT','PATCH']:
@@ -18,6 +38,7 @@ def log_requests_info():
         logging.info(f'Request: {request.method} {request.url}')
 
 
+# register route for registering user for implementing basic auth or jwt auth
 @api.route('register', methods=['POST'])
 def register():
     try:
@@ -55,4 +76,3 @@ def register():
         logging.error(f'Unexpected error {str(e)}')
         return jsonify({'message':'Unexpected error occured', 'error':str(e)}), 500
         
-
