@@ -3,7 +3,7 @@ from .database import db
 from .config import Config
 from flask_cors import CORS
 from flask_migrate import Migrate
-from routes import api
+from .routes import api
 
 migrate = Migrate()
 
@@ -17,6 +17,6 @@ def create_app(config = Config):
     CORS(app)
     migrate.init_app(app, db)
 
-    app.register_blueprint(api, url_prefix='api')
+    app.register_blueprint(api, url_prefix='/api')
 
     return app

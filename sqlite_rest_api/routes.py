@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from sqlite_rest_api import db
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from models import User
+from .models import User, Quote
 from functools import wraps
 from flask import Blueprint
 import logging
@@ -13,21 +13,6 @@ api = Blueprint('api', __name__)
 logging.basicConfig(filename='api.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-def basic_auth_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        auth = request.authorization
-        if not auth or not auth.username or not auth.password:
-            return jsonify({'message': 'Authentication required'}), 401
-        
-        user = User.query.filter_by(username=auth.username).first()
-        if not user or not user.check_password(auth.password):
-            return jsonify({'message': 'Invalid credentials'}), 401
-
-        return f(*args, **kwargs)  # Proceed with the actual function
-
-    return decorated_function
-
 
 # before each request, log request and data/payload if provided
 @api.before_request
@@ -38,8 +23,25 @@ def log_requests_info():
         logging.info(f'Request: {request.method} {request.url}')
 
 
+def basic_auth_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not auth.username or not auth.password:
+            return jsonify({'message': 'Authentication required'}), 401
+        
+        user = User.query.filter_by(username=auth.username).first()
+        if not user or not user.check_password(auth.password):
+            return jsonify({'message': 'Invalid credentials'}), 401
+        
+        logging.info(f'User authorized')
+        return f(*args, **kwargs)  # Proceed with the actual function
+
+    return decorated_function
+
+
 # register route for registering user for implementing basic auth or jwt auth
-@api.route('register', methods=['POST'])
+@api.route('/register', methods=['POST'])
 def register():
     try:
         data = request.json
@@ -76,3 +78,19 @@ def register():
         logging.error(f'Unexpected error {str(e)}')
         return jsonify({'message':'Unexpected error occured', 'error':str(e)}), 500
         
+
+@api.route('/add', methods=['POST'])
+@basic_auth_required
+def add_qoute():
+    data = request.json
+    author = request.authorization.username
+
+    if not data or 'quote' not in data:
+        logging.error(f'No quote to add!')
+        return jsonify({'message':'No quote to add', 'code':400}), 400
+    
+    user = User.query.filter_by(username=author).first()
+    new_quote = Quote(quote=data['quote'], user_id=user.id)
+    
+    
+    
