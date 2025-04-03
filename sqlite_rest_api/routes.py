@@ -81,16 +81,33 @@ def register():
 
 @api.route('/add', methods=['POST'])
 @basic_auth_required
-def add_qoute():
-    data = request.json
-    author = request.authorization.username
-
-    if not data or 'quote' not in data:
-        logging.error(f'No quote to add!')
-        return jsonify({'message':'No quote to add', 'code':400}), 400
+def add_quote():
+    try:
+        data = request.json
+        author = request.authorization.username
+        if not data or 'quote' not in data:
+            logging.error(f'No quote to add!')
+            return jsonify({'message':'No quote to add', 'code':400}), 400
+        
+        user = User.query.filter_by(username=author).first()
+        if not user:
+            logging.error(f'No such user found {author}')
+            return jsonify({'message':f'User {author} not found', 'code':400}), 400
+        
+        new_quote = Quote(quote=data['quote'], user_id=user.id)
+        db.session.add(new_quote)
+        db.session.commit()
+        
+        logging.info(f'Quote added by {user}')
+        return jsonify({'message':'Quote added successfully', 'code':201}), 201
     
-    user = User.query.filter_by(username=author).first()
-    new_quote = Quote(quote=data['quote'], user_id=user.id)
+    except Exception as e:
+        logging.error(f'An error occured while adding quote. {e}')
+        return jsonify({'error':f'Error occurred {e}', 'code':500}), 500
+
+
+
+
     
     
     

@@ -10,7 +10,11 @@ class User(db.Model):
     username = db.Column(db.String(40), nullable=False, unique=True)
     email = db.Column(db.String(100), nullable=False, unique=True)
     password = db.Column(db.String(100), nullable=False)
+    quotes = db.relationship('Quote', backref='author')
 
+    def __repr__(self):
+        return f"User('{self.username}','{self.email}')"
+    
     def hash_password(self, user_pass):
         self.password = bcrypt.generate_password_hash(user_pass).decode('utf-8')
     
@@ -21,4 +25,7 @@ class Quote(db.Model):
     quote_id = db.Column(db.Integer, primary_key=True)
     quote = db.Column(db.Text, unique=True, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    author = db.relationship('User', backref='quotes')
+
+    def __repr__(self):
+        return f"Post('{self.author}','{self.quote}')"
+    
