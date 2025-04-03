@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request, jsonify, url_for
 from sqlite_rest_api import db
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from .models import User, Quote
@@ -23,6 +23,7 @@ def log_requests_info():
         logging.info(f'Request: {request.method} {request.url}')
 
 
+# implementing a decorator for basic authentication method
 def basic_auth_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -105,9 +106,28 @@ def add_quote():
         logging.error(f'An error occured while adding quote. {e}')
         return jsonify({'error':f'Error occurred {e}', 'code':500}), 500
 
-
-
-
+@api.route('/quotes',methods=['GET'])
+@basic_auth_required
+def get_quotes():
+    try:
+        user = request.authorization.username
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        paginate_qoutes = Quote.query.paginate(page=page, per_page=per_page, error_out=False)
+        logging.info(f'Quotes Fetched for user - {user}')
+        return jsonify({
+            'previous page': url_for('api.get_quotes', page=paginate_qoutes.page-1, per_page=per_page)\
+            if paginate_qoutes.page>1 else None,
+            'current page': paginate_qoutes.page,
+            'next page': url_for('api.get_quotes', page=paginate_qoutes.page+1, per_page=per_page)\
+            if paginate_qoutes.page<paginate_qoutes.pages else None,
+            'total pages': paginate_qoutes.pages,
+            'total quotes': paginate_qoutes.total,
+            'data':[{'quote': quote.quote,
+            'author':quote.author.username} for quote in paginate_qoutes.items]}), 200
     
-    
-    
+    except Exception as e:
+        logging.error(F'Error occured while fetching quotes.{e}')
+        return jsonify({
+            'message':f'Error occured occured while fetching quotes - {e}',
+            'code':500}), 500
