@@ -80,14 +80,14 @@ def register():
         return jsonify({'message':'Unexpected error occured', 'error':str(e)}), 500
         
 
-@api.route('/add', methods=['POST'])
+@api.route('/add/user', methods=['POST'])
 @basic_auth_required
 def add_quote():
     try:
         data = request.json
         author = request.authorization.username
         if not data or 'quote' not in data:
-            logging.error(f'No quote to add!')
+            logging.error(f'Bad request - No quote to add!')
             return jsonify({'message':'No quote to add', 'code':400}), 400
         
         user = User.query.filter_by(username=author).first()
@@ -129,5 +129,53 @@ def get_quotes():
     except Exception as e:
         logging.error(F'Error occured while fetching quotes.{e}')
         return jsonify({
-            'message':f'Error occured occured while fetching quotes - {e}',
+            'message':f'Error occured while fetching quotes - {e}',
             'code':500}), 500
+
+
+@api.route('/edit/<int:quote_id>', methods=['PUT'])
+@basic_auth_required
+def edit_quote(quote_id):
+    try:
+        data = request.json
+        quote = Quote.query.get_or_404(quote_id)
+        user = request.authorization.username
+        if not quote.author or quote.author.username != user:
+            logging.error(f'Forbidden to edit for user - {user}')
+            return jsonify({'message':'Unauthorized attempt', 'code':403}), 403
+        if not 'quote' in data:
+            logging.error(f'Bad request - No data provided to edit')
+            return jsonify({'message':'No data provided to edit quote',
+                            'code':400}), 400
+        quote.quote = data['quote']
+        db.session.commit()
+        logging.info(f'Quote successfully edited by {user}')
+        return jsonify({'message':'Quote update successfully',
+                        'code':200}), 200
+    except Exception as e:
+        logging.error(f'Error occured while editing quote.')
+        return jsonify({
+            'message':f'Error occured while editing quotes - {e}',
+            'code':500}), 500
+
+
+@api.route('/delete/<int:quote_id>', methods=['DELETE'])
+@basic_auth_required
+def delete(quote_id):
+    try:
+        quote = Quote.query.get_or_404(quote_id)
+        user = request.authorization.username
+        if not quote.author or quote.author.username != user:
+            logging.error(f'Forbidden to delete for user - {user}')
+            return jsonify({'message':'Unauthorized attempt', 'code':403}), 403
+        db.session.delete(quote)
+        db.session.commit()
+        logging.info(f'Quote successfully deleted by {user}')
+        return jsonify({'message':'Quote deleted successfully',
+                        'code':200}), 200
+    except Exception as e:
+        logging.error(f'Error occured while deleting quote.')
+        return jsonify({
+            'message':f'Error occured while deleting quote - {e}',
+            'code':500}), 500
+
