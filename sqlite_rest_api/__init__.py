@@ -1,11 +1,8 @@
 from flask import Flask
-from .database import db
+from .extension import db, limiter, migrate
 from .config import Config
 from flask_cors import CORS
-from flask_migrate import Migrate
 from .routes import api
-
-migrate = Migrate()
 
 def create_app(config = Config):
     # creating application instance
@@ -14,6 +11,7 @@ def create_app(config = Config):
     # setting configuration
     app.config.from_object(config)
     db.init_app(app)    # initializing the database instance with app
+    limiter.init_app(app)
     CORS(app)
     migrate.init_app(app, db)
 

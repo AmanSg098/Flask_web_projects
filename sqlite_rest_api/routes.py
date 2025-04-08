@@ -1,13 +1,16 @@
 from flask import request, jsonify, url_for
-from sqlite_rest_api import db
+from .extension import db, limiter
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from .models import User, Quote
 from functools import wraps
 from flask import Blueprint
 import logging
 
+
 # setting blueprint for the routes of api
 api = Blueprint('api', __name__)
+
+from sqlite_rest_api import limiter
 
 # configuring loggin mechanism
 logging.basicConfig(filename='api.log', level=logging.INFO,
@@ -80,7 +83,7 @@ def register():
         return jsonify({'message':'Unexpected error occured', 'error':str(e)}), 500
         
 
-@api.route('/add/user', methods=['POST'])
+@api.route('/add', methods=['POST'])
 @basic_auth_required
 def add_quote():
     try:
@@ -106,8 +109,10 @@ def add_quote():
         logging.error(f'An error occured while adding quote. {e}')
         return jsonify({'error':f'Error occurred {e}', 'code':500}), 500
 
+
 @api.route('/quotes',methods=['GET'])
 @basic_auth_required
+@limiter.limit('3 per minute')
 def get_quotes():
     try:
         user = request.authorization.username

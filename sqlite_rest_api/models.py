@@ -1,4 +1,4 @@
-from .database import db
+from .extension import db
 from flask_bcrypt import Bcrypt
 
 # bcrypt class for hashing passwords of registering users
