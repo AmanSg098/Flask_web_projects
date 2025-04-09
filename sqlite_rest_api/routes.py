@@ -1,10 +1,12 @@
 from flask import request, jsonify, url_for
 from .extension import db, limiter
+from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from .models import User, Quote
 from functools import wraps
 from flask import Blueprint
 import logging
+from datetime import timedelta
 
 
 # setting blueprint for the routes of api
@@ -81,22 +83,42 @@ def register():
     except Exception as e:
         logging.error(f'Unexpected error {str(e)}')
         return jsonify({'message':'Unexpected error occured', 'error':str(e)}), 500
-        
+
+@api.route('/login', methods=['POST'])
+def login():
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'message':'Unauthorized access', 'code':401}), 401
+        username = data.get('username')
+        password = data.get('password')
+        if not username or not password:
+            return jsonify({'message':'Credentials Required', 'code':400}), 400
+        user = User.query.filter_by(username=username).first()
+        if user.check_password(password):
+            access_token = create_access_token(identity=user.email, expires_delta=timedelta(minutes=60))
+            return jsonify({'message':'Login successful and Token generted',
+                            'Token':access_token,
+                            'code':200}), 200
+    except Exception as e:
+        return jsonify({'message':f'Unexpected error {str(e)}',
+                        'code':500}), 500
+
 
 @api.route('/add', methods=['POST'])
-@basic_auth_required
+@jwt_required()
 def add_quote():
     try:
         data = request.json
-        author = request.authorization.username
+        author_mail = get_jwt_identity()
         if not data or 'quote' not in data:
             logging.error(f'Bad request - No quote to add!')
             return jsonify({'message':'No quote to add', 'code':400}), 400
         
-        user = User.query.filter_by(username=author).first()
+        user = User.query.filter_by(email=author_mail).first()
         if not user:
-            logging.error(f'No such user found {author}')
-            return jsonify({'message':f'User {author} not found', 'code':400}), 400
+            logging.error(f'No such user found {author_mail}')
+            return jsonify({'message':f'User {author_mail} not found', 'code':400}), 400
         
         new_quote = Quote(quote=data['quote'], user_id=user.id)
         db.session.add(new_quote)
@@ -111,15 +133,16 @@ def add_quote():
 
 
 @api.route('/quotes',methods=['GET'])
-@basic_auth_required
+@jwt_required()
 @limiter.limit('3 per minute')
 def get_quotes():
     try:
-        user = request.authorization.username
+        user_mail = get_jwt_identity()
+        user = User.query.filter_by(email=user_mail).first()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         paginate_qoutes = Quote.query.paginate(page=page, per_page=per_page, error_out=False)
-        logging.info(f'Quotes Fetched for user - {user}')
+        logging.info(f'Quotes Fetched for user - {user.username}')
         return jsonify({
             'previous page': url_for('api.get_quotes', page=paginate_qoutes.page-1, per_page=per_page)\
             if paginate_qoutes.page>1 else None,
@@ -139,19 +162,20 @@ def get_quotes():
 
 
 @api.route('/edit/<int:quote_id>', methods=['PUT'])
-@basic_auth_required
+@jwt_required()
 def edit_quote(quote_id):
     try:
         data = request.json
         quote = Quote.query.get_or_404(quote_id)
-        user = request.authorization.username
-        if not quote.author or quote.author.username != user:
-            logging.error(f'Forbidden to edit for user - {user}')
-            return jsonify({'message':'Unauthorized attempt', 'code':403}), 403
         if not 'quote' in data:
             logging.error(f'Bad request - No data provided to edit')
             return jsonify({'message':'No data provided to edit quote',
                             'code':400}), 400
+        user_mail = get_jwt_identity()
+        user = User.query.filter_by(email=user_mail).first()
+        if not quote.author or quote.author.username != user.username:
+            logging.error(f'Forbidden to edit for user - {user}')
+            return jsonify({'message':'Unauthorized attempt', 'code':403}), 403
         quote.quote = data['quote']
         db.session.commit()
         logging.info(f'Quote successfully edited by {user}')
@@ -165,12 +189,13 @@ def edit_quote(quote_id):
 
 
 @api.route('/delete/<int:quote_id>', methods=['DELETE'])
-@basic_auth_required
+@jwt_required()
 def delete(quote_id):
     try:
         quote = Quote.query.get_or_404(quote_id)
-        user = request.authorization.username
-        if not quote.author or quote.author.username != user:
+        user_mail = get_jwt_identity()
+        user = User.query.filter_by(email=user_mail).first()
+        if not quote.author or quote.author.username != user.username:
             logging.error(f'Forbidden to delete for user - {user}')
             return jsonify({'message':'Unauthorized attempt', 'code':403}), 403
         db.session.delete(quote)
