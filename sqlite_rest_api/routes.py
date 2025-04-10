@@ -1,6 +1,6 @@
-from flask import request, jsonify, url_for, abort
+from flask import request, jsonify, url_for
 from .extension import db, limiter
-from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity, verify_jwt_in_request
+from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from .models import User, Quote
 from functools import wraps
@@ -14,8 +14,6 @@ api = Blueprint('api', __name__)
 
 from sqlite_rest_api import limiter
 
-valid_roles = ['admin','user']
-
 # configuring loggin mechanism
 logging.basicConfig(filename='api.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
@@ -28,19 +26,6 @@ def log_requests_info():
         logging.info(f'Request: {request.method} {request.url} - Payload {request.json}')
     else:
         logging.info(f'Request: {request.method} {request.url}')
-
-# implementing role_required with jwt identity checker
-def role_required(required_role):
-    def wrapper(fn):
-        @wraps(fn)
-        def decorator(*args, **kwargs):
-            verify_jwt_in_request()
-            user = get_jwt_identity()
-            if user['role'] != required_role:
-                abort(403, description="Access denied")
-            return fn(*args, **kwargs)
-        return decorator
-    return wrapper
 
 
 # implementing a decorator for basic authentication method
@@ -61,6 +46,24 @@ def basic_auth_required(f):
     return decorated_function
 
 
+# implementing role required decorator
+def role_required(role):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # Get user email from JWT
+            user_email = get_jwt_identity()
+            user = User.query.filter_by(email=user_email).first()
+
+            if user.role != role:
+                logging.error(f'Access denied for user {user_email}, role: {user.role}')
+                return jsonify({'message': 'Access Denied', 'code': 403}), 403
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+
 # register route for registering user for implementing basic auth or jwt auth
 @api.route('/register', methods=['POST'])
 def register():
@@ -72,10 +75,10 @@ def register():
 
         username = data.get('username')
         email = data.get('email')
-        role = data.get('role')
         password = data.get('password')
+        role = data.get('role','user')
 
-        if not username or not email or not password or role not in valid_roles:
+        if not username or not email or not password:
             logging.warning('User creation failed: Missing required fields.')
             return jsonify({'message': 'Missing required fields', 'code': 400}), 400
         
@@ -89,7 +92,7 @@ def register():
     
     except IntegrityError as e:
         db.session.rollback()
-        logging.error(f'Duplicate entry or integrity constraint voilation for user:{user}')
+        logging.error(f'Duplicate entryor integrity constraint voilation for user:{user}')
         return jsonify({'error': 'Integrity Error', 'message': 'Username or Email already exists'}), 409
 
     except SQLAlchemyError as e:
@@ -111,18 +114,11 @@ def login():
         if not username or not password:
             return jsonify({'message':'Credentials Required', 'code':400}), 400
         user = User.query.filter_by(username=username).first()
-        
-        if not user or not user.check_password(password):
-            return jsonify({'message': 'Invalid credentials', 'code': 401}), 401
         if user.check_password(password):
-            access_token = create_access_token(identity={'user_mail':user.email,
-                                                         'role':user.role},
-                                                         expires_delta=timedelta(minutes=60))
-            logging.info(f"User {username} logged in successfully")
+            access_token = create_access_token(identity=user.email, expires_delta=timedelta(minutes=60))
             return jsonify({'message':'Login successful and Token generted',
                             'Token':access_token,
                             'code':200}), 200
-        
     except Exception as e:
         return jsonify({'message':f'Unexpected error {str(e)}',
                         'code':500}), 500
@@ -134,8 +130,7 @@ def login():
 def add_quote():
     try:
         data = request.json
-        identity = get_jwt_identity()
-        author_mail = identity['user_mail']
+        author_mail = get_jwt_identity()
         if not data or 'quote' not in data:
             logging.error(f'Bad request - No quote to add!')
             return jsonify({'message':'No quote to add', 'code':400}), 400
@@ -233,4 +228,3 @@ def delete(quote_id):
         return jsonify({
             'message':f'Error occured while deleting quote - {e}',
             'code':500}), 500
-
