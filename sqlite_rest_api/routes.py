@@ -1,5 +1,5 @@
 from flask import request, jsonify, url_for
-from .extension import db, limiter
+from .extension import db, limiter, cache
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from .models import User, Quote
@@ -155,6 +155,7 @@ def add_quote():
 @api.route('/quotes',methods=['GET'])
 @jwt_required()
 @limiter.limit('3 per minute')
+@cache.cached(timeout=30, query_string=True)
 def get_quotes():
     try:
         user_mail = get_jwt_identity()
