@@ -51,5 +51,5 @@ def profile():
 @role_required('admin')
 def admin_only():
     user = get_jwt_identity()
-    return jsonify({"msg": f"Welcome admin {user['username']}"}), 200
+    return jsonify({"msg": f"Welcome admin {user}"}), 200
 
