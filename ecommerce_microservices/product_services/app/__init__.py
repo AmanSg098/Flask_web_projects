@@ -11,6 +11,7 @@ def create_app(config=Config):
     app.config.from_object(config)
 
     db.init_app(app)
+    migrate.init_app(app, db)
 
     from .routes.products import product_bp
     app.register_blueprint(product_bp, url_prefix='/api/products')

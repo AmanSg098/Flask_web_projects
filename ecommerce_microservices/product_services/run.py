@@ -1,5 +1,8 @@
 from app import create_app
-app = create_app()
 
-if __name__ == '__main__':
-    app.run(debug=True)
+application = create_app()
+
+# Optional: Initialize migrate inside run.py too
+
+if __name__ == "__main__":
+    application.run(debug=True)

@@ -1,66 +1,51 @@
 from flask import Blueprint, request, jsonify
-from app.models import Product, db
-from app.decorators import role_required
-from flask_jwt_extended import jwt_required
+from ..jwt_utils import token_required
+from ..models import Product, db
 
+product_bp = Blueprint('products', __name__)
 
-product_bp = Blueprint('product_bp', __name__)
+@product_bp.route('/', methods=['GET'])
+def get_all_products():
+    products = Product.query.all()
+    return jsonify([product.to_dict() for product in products]), 200
 
-# Create product
+@product_bp.route('/<int:product_id>', methods=['GET'])
+def get_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    return jsonify(product.to_dict()), 200
+
 @product_bp.route('/', methods=['POST'])
-@jwt_required()
-@role_required('admin')  
+@token_required
 def create_product():
     data = request.get_json()
-
     new_product = Product(
         name=data['name'],
-        description=data.get('description', ''),
+        description=data.get('description'),
         price=data['price'],
-        stock=data['stock']
+        stock=data['stock'],
+        quantity=data.get('quantity', 0)
     )
-
     db.session.add(new_product)
     db.session.commit()
-
     return jsonify(new_product.to_dict()), 201
 
-# Get all products
-@product_bp.route('/', methods=['GET'])
-@jwt_required()
-def get_products():
-    products = Product.query.all()
-    return jsonify([product.to_dict() for product in products])
-
-# Get product by ID
-@product_bp.route('/<int:id>', methods=['GET'])
-@jwt_required()
-def get_product(id):
-    product = Product.query.get_or_404(id)
-    return jsonify(product.to_dict())
-
-# Update product
-@product_bp.route('/<int:id>', methods=['PUT'])
-@jwt_required()
-@role_required('admin')
-def update_product(id):
-    product = Product.query.get_or_404(id)
+@product_bp.route('/<int:product_id>', methods=['PUT'])
+@token_required
+def update_product(product_id):
+    product = Product.query.get_or_404(product_id)
     data = request.get_json()
-
     product.name = data.get('name', product.name)
     product.description = data.get('description', product.description)
     product.price = data.get('price', product.price)
     product.stock = data.get('stock', product.stock)
-
+    product.quantity = data.get('quantity', product.quantity)
     db.session.commit()
-    return jsonify(product.to_dict())
+    return jsonify(product.to_dict()), 200
 
-# Delete product
-@product_bp.route('/<int:id>', methods=['DELETE'])
-@jwt_required()
-@role_required('admin')
-def delete_product(id):
-    product = Product.query.get_or_404(id)
+@product_bp.route('/<int:product_id>', methods=['DELETE'])
+@token_required
+def delete_product(product_id):
+    product = Product.query.get_or_404(product_id)
     db.session.delete(product)
     db.session.commit()
-    return jsonify({"msg": "Product deleted"}), 200
+    return jsonify({'message': 'Product deleted successfully'}), 200

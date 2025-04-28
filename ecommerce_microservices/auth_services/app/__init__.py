@@ -14,6 +14,7 @@ def create_app(config=Config):
 
     db.init_app(app)
     jwt.init_app(app)
+    migrate.init_app(app, db)
 
     from .routes.auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
