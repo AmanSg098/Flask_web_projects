@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from ..jwt_utils import token_required
+from ..decorators import role_required
 from ..models import Product, db
 
 product_bp = Blueprint('products', __name__)
@@ -16,6 +17,7 @@ def get_product(product_id):
 
 @product_bp.route('/', methods=['POST'])
 @token_required
+@role_required('admin')
 def create_product():
     data = request.get_json()
     new_product = Product(
@@ -31,6 +33,7 @@ def create_product():
 
 @product_bp.route('/<int:product_id>', methods=['PUT'])
 @token_required
+@role_required('admin')
 def update_product(product_id):
     product = Product.query.get_or_404(product_id)
     data = request.get_json()
@@ -44,6 +47,7 @@ def update_product(product_id):
 
 @product_bp.route('/<int:product_id>', methods=['DELETE'])
 @token_required
+@role_required('admin')
 def delete_product(product_id):
     product = Product.query.get_or_404(product_id)
     db.session.delete(product)
