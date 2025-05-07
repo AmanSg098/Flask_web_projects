@@ -19,9 +19,11 @@ def create_app(config=Config):
     from .auth.auth import auth_bp
     from .user.user import user_bp
     from .post.posts import posts_bp
+    from .comment.comment import comment_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(posts_bp)
+    app.register_blueprint(comment_bp)
 
     return app

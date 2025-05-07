@@ -39,7 +39,6 @@ def create_post():
         user_id=user.id,
         tags=tag_objs
     )
-
     db.session.add(post)
     db.session.commit()
 
@@ -99,3 +98,61 @@ def update_post(post_id):
 
     db.session.commit()
     return jsonify({'message': 'Post updated'}), 200
+
+
+@posts_bp.route('/delete/<int:id>',methods=['DELETE'])
+@jwt_required()
+def delete_post(id):
+    user_mail = get_jwt_identity()
+    user = User.query.filter_by(email=user_mail).first()
+    post = Post.query.filter_by(id=id).first()
+
+    if not post:
+        return jsonify({'error': 'Post not found'}), 404
+
+    if post.user_id != user.id:
+        return jsonify({'error':'Unauthorized'}), 403
+    
+    db.session.delete(post)
+    db.session.commit()
+    return jsonify({'message':'Post Deleted'}), 200
+
+
+@posts_bp.route('/', methods=['GET'])
+def get_posts():
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    tag = request.args.get('tag')
+    author = request.args.get('author')
+    status = request.args.get('status', 'published')
+
+    query = Post.query.filter_by(status=status)
+
+    if tag:
+        query = query.join(Post.tags).filter(Tag.name == tag)
+
+    if author:
+        query = query.join(User).filter(User.username == author)
+
+    posts_paginated = query.order_by(Post.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    posts = posts_paginated.items
+
+    data = []
+    for post in posts:
+        data.append({
+            'id': post.id,
+            'title': post.title,
+            'slug': post.slug,
+            'author': post.author.username,
+            'tags': [tag.name for tag in post.tags],
+            'created_at': post.created_at.isoformat(),
+            'status': post.status
+        })
+
+    return jsonify({
+        'posts': data,
+        'total': posts_paginated.total,
+        'pages': posts_paginated.pages,
+        'current_page': posts_paginated.page
+    }), 200
+
